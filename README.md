@@ -1,2 +1,2 @@
 # k-means
-Visualization of k-mens algorithm
+Visualization of k-means algorithm
