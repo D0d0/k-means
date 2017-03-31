@@ -11,11 +11,11 @@
 <canvas id="myChart" width="400" height="400"></canvas>
 <input type="button" id="reset" value="Reset">
 <input type="button" id="next" value="Next step">
+<input type="text" id="k" value="5" placeholder="k clusters">
+<input type="text" id="points" value="100" placeholder="number of points">
 <script src="node_modules/chart.js/dist/Chart.bundle.min.js"></script>
 <script>
     window.onload = function () {
-        var k = 10;
-
         var hexToRgb = function (hex) {
             var result = /^#?([a-f\d]{1,2})([a-f\d]{1,2})([a-f\d]{1,2})$/i.exec(hex);
             return result ? {
@@ -57,8 +57,9 @@
             }
         });
 
-        var createPoints = function (n) {
-            n = n || 150;
+        var createPoints = function () {
+            var k = document.getElementById("k").value * 1 || 5;
+            var n = document.getElementById("points").value * 1 || 100;
             var points = [];
             for (var i = 0; i < n; i++) {
                 var point = {
