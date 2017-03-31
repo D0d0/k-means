@@ -115,7 +115,7 @@
 
                 step = CALCULATE_CENTER;
             } else {
-                var means = {};
+                var means = [];
                 assignedClusters.forEach(function (clusterIndex, index) {
                     var actualMean = means[clusterIndex] || {x: 0, y: 0, count: 0};
                     var point = myChart.data.datasets[0].data[index];
@@ -127,10 +127,10 @@
                     means[clusterIndex] = actualMean;
                 });
 
-                for (var index in means) {
-                    myChart.data.datasets[1].data[index].x = means[index].x / means[index].count;
-                    myChart.data.datasets[1].data[index].y = means[index].y / means[index].count;
-                }
+                means.forEach(function (mean, index) {
+                    myChart.data.datasets[1].data[index].x = mean.x / mean.count;
+                    myChart.data.datasets[1].data[index].y = mean.y / mean.count;
+                });
 
                 step = ASSIGN;
             }
