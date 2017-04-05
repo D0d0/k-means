@@ -11,11 +11,53 @@
 <canvas id="myChart" width="400" height="400"></canvas>
 <input type="button" id="reset" value="Reset">
 <input type="button" id="next" value="Next step">
+<input type="button" id="start" value="Start">
+<input type="button" id="stop" value="Stop">
 <input type="text" id="k" value="5" placeholder="k clusters">
 <input type="text" id="points" value="100" placeholder="number of points">
 <script src="node_modules/chart.js/dist/Chart.bundle.min.js"></script>
 <script>
     window.onload = function () {
+
+        /*
+         if (haveNextNextGaussian) {
+         haveNextNextGaussian = false;
+         return nextNextGaussian;
+         } else {
+         double v1, v2, s;
+         do {
+         v1 = 2 * nextDouble() - 1; // between -1 and 1
+         v2 = 2 * nextDouble() - 1; // between -1 and 1
+         s = v1 * v1 + v2 * v2;
+         } while (s >= 1 || s == 0);
+         double multiplier = StrictMath.sqrt(-2 * StrictMath.log(s)/s);
+         nextNextGaussian = v2 * multiplier;
+         haveNextNextGaussian = true;
+         return v1 * multiplier;
+         }
+
+         */
+
+        var haveNextNextGaussian = false,
+            nextNextGaussian;
+        var randn_bm = function () {
+            if (haveNextNextGaussian) {
+                haveNextNextGaussian = false;
+                return nextNextGaussian;
+            } else {
+                var v1, v2, s;
+                do {
+                    v1 = 2 * Math.random() - 1; // between -1 and 1
+                    v2 = 2 * Math.random() - 1; // between -1 and 1
+                    s = v1 * v1 + v2 * v2;
+                } while (s >= 1 || s == 0);
+                var multiplier = Math.sqrt(-2 * Math.log(s) / s);
+                nextNextGaussian = v2 * multiplier;
+                haveNextNextGaussian = true;
+                return v1 * multiplier;
+            }
+        };
+
         var hexToRgb = function (hex) {
             var result = /^#?([a-f\d]{1,2})([a-f\d]{1,2})([a-f\d]{1,2})$/i.exec(hex);
             return result ? {
@@ -57,14 +99,29 @@
             }
         });
 
+        var ticks = 0;
         var createPoints = function () {
+            ticks = 0;
             var k = document.getElementById("k").value * 1 || 5;
             var n = document.getElementById("points").value * 1 || 100;
             var points = [];
-            for (var i = 0; i < n; i++) {
+            var basePoints = [];
+            for (var i = 0; i < 20; i++) {
                 var point = {
                     x: randomIntFromInterval(0, 30),
-                    y: randomIntFromInterval(0, 30),
+                    y: randomIntFromInterval(0, 30)
+                };
+
+                basePoints.push(point);
+            }
+
+            for (var i = 0; i < n; i++) {
+                var item = basePoints[Math.floor(Math.random() * basePoints.length)];
+                var point = {
+                    //x: randomIntFromInterval(0, 50),
+                    //y: randomIntFromInterval(0, 50)
+                    x: item.x + 1.2 * randn_bm(),
+                    y: item.y + 1.2 * randn_bm(),
                     r: 10
                 };
 
@@ -92,65 +149,77 @@
             step = ASSIGN;
         };
 
+        var assignStep = function () {
+            assignedClusters = [];
+            myChart.data.datasets[0].data.forEach(function (point) {
+                var minDistance = Infinity, assignedCluster = 0;
+                myChart.data.datasets[1].data.forEach(function (cluster, clusterIndex) {
+                    var dist = distance(point, cluster);
+                    if (dist < minDistance) {
+                        minDistance = dist;
+                        assignedCluster = clusterIndex;
+                    }
+                });
+                assignedClusters.push(assignedCluster);
+            });
+            myChart.data.datasets[0].backgroundColor = assignedClusters.map(function (index) {
+                var rgb = hexToRgb(myChart.data.datasets[1].backgroundColor[index]);
+
+                return "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ",0.7)";
+            });
+
+            step = CALCULATE_CENTER;
+        };
+
+        var calculateCenters = function () {
+            var means = [];
+            assignedClusters.forEach(function (clusterIndex, index) {
+                var actualMean = means[clusterIndex] || {x: 0, y: 0, count: 0};
+                var point = myChart.data.datasets[0].data[index];
+                actualMean = {
+                    x: actualMean.x + point.x,
+                    y: actualMean.y + point.y,
+                    count: actualMean.count + 1
+                };
+                means[clusterIndex] = actualMean;
+            });
+
+            means.forEach(function (mean, index) {
+                myChart.data.datasets[1].data[index].x = mean.x / mean.count;
+                myChart.data.datasets[1].data[index].y = mean.y / mean.count;
+            });
+
+            step = ASSIGN;
+        };
+
         var nextStep = function () {
             if (step === ASSIGN) {
-                assignedClusters = [];
-                myChart.data.datasets[0].data.forEach(function (point) {
-                    var minDistance = Infinity, assignedCluster = 0;
-                    myChart.data.datasets[1].data.forEach(function (cluster, clusterIndex) {
-                        var dist = distance(point, cluster);
-                        if (dist < minDistance) {
-                            minDistance = dist;
-                            assignedCluster = clusterIndex;
-                        }
-                    });
-                    assignedClusters.push(assignedCluster);
-                });
-                var colors = assignedClusters.map(function (index) {
-                    var rgb = hexToRgb(myChart.data.datasets[1].backgroundColor[index]);
-
-                    return "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ",0.7)";
-                });
-                myChart.data.datasets[0].backgroundColor = colors;
-
-                step = CALCULATE_CENTER;
+                assignStep();
             } else {
-                var means = [];
-                assignedClusters.forEach(function (clusterIndex, index) {
-                    var actualMean = means[clusterIndex] || {x: 0, y: 0, count: 0};
-                    var point = myChart.data.datasets[0].data[index];
-                    actualMean = {
-                        x: actualMean.x + point.x,
-                        y: actualMean.y + point.y,
-                        count: actualMean.count + 1
-                    };
-                    means[clusterIndex] = actualMean;
-                });
-
-                means.forEach(function (mean, index) {
-                    myChart.data.datasets[1].data[index].x = mean.x / mean.count;
-                    myChart.data.datasets[1].data[index].y = mean.y / mean.count;
-                });
-
-                step = ASSIGN;
+                calculateCenters();
             }
 
             myChart.update();
+
+            ticks++;
+            if (ticks > 40) {
+                createPoints();
+            }
         };
 
-        document.getElementById("reset").onclick = function () {
-            createPoints();
+        document.getElementById("reset").onclick = createPoints;
+        document.getElementById("next").onclick = nextStep;
+
+        var timer;
+        document.getElementById("start").onclick = function () {
+            timer = timer || setInterval(nextStep, 500);
         };
-        document.getElementById("next").onclick = function () {
-            nextStep();
+        document.getElementById("stop").onclick = function () {
+            clearInterval(timer);
+            timer = undefined;
         };
 
     }
-    /*setInterval(function () {
-     //myChart.data.datasets[0].data[0].x++;
-     myChart.data.datasets[0].data[0].fillColor = "green";
-     myChart.update();
-     }, 1000);*/
 </script>
 </body>
 </html>
