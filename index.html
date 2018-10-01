@@ -18,26 +18,6 @@
 <script src="node_modules/chart.js/dist/Chart.bundle.min.js"></script>
 <script>
     window.onload = function () {
-
-        /*
-         if (haveNextNextGaussian) {
-         haveNextNextGaussian = false;
-         return nextNextGaussian;
-         } else {
-         double v1, v2, s;
-         do {
-         v1 = 2 * nextDouble() - 1; // between -1 and 1
-         v2 = 2 * nextDouble() - 1; // between -1 and 1
-         s = v1 * v1 + v2 * v2;
-         } while (s >= 1 || s == 0);
-         double multiplier = StrictMath.sqrt(-2 * StrictMath.log(s)/s);
-         nextNextGaussian = v2 * multiplier;
-         haveNextNextGaussian = true;
-         return v1 * multiplier;
-         }
-
-         */
-
         var haveNextNextGaussian = false,
             nextNextGaussian;
         var randn_bm = function () {
@@ -118,8 +98,6 @@
             for (var i = 0; i < n; i++) {
                 var item = basePoints[Math.floor(Math.random() * basePoints.length)];
                 var point = {
-                    //x: randomIntFromInterval(0, 50),
-                    //y: randomIntFromInterval(0, 50)
                     x: item.x + 1.2 * randn_bm(),
                     y: item.y + 1.2 * randn_bm(),
                     r: 10
